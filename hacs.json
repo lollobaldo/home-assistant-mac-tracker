@@ -1,0 +1,6 @@
+{
+  "name": "MAC Device Tracker",
+  "country": "GB",
+  "render_readme": false,
+  "domains": ["device_tracker"]
+}
