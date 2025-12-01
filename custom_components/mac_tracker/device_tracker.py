@@ -26,5 +26,6 @@ class MacTrackerEntity(TrackerEntity):
     def is_connected(self):
         return self.coordinator.data.get(self._mac.lower(), False)
 
-    def extra_state_attributes(self):
+    @property
+    def extra_state_attributes(self):  # type: ignore
         return {"ip": self.device.get("last_ip")}
