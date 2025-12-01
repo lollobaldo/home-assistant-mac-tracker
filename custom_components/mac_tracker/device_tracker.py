@@ -1,6 +1,4 @@
 from homeassistant.components.device_tracker.config_entry import TrackerEntity
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.device_registry import DeviceEntryType
 from .const import DOMAIN
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -21,7 +19,6 @@ class MacTrackerEntity(TrackerEntity):
     def is_connected(self):
         return self.coordinator.data.get(self._mac.lower(), False)
 
-    @property
     def extra_state_attributes(self):
         return {"ip": self.device.get("last_ip")}
 

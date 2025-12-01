@@ -1,10 +1,5 @@
-from datetime import timedelta
 import logging
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.components.device_tracker.config_entry import TrackerEntity
-from homeassistant.core import HomeAssistant
-from .scanner import scan_network, is_mac_online
-from .const import DEFAULT_SCAN_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
