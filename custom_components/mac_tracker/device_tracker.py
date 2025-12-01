@@ -1,44 +1,33 @@
-from __future__ import annotations
-
 from homeassistant.components.device_tracker.config_entry import TrackerEntity
-from homeassistant.helpers.device_registry import DeviceEntryType
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.core import callback
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceEntryType
+from .const import DOMAIN
 
-from .const import DOMAIN, CONF_NAME, CONF_PERSON, CONF_MAC
+async def async_setup_entry(hass, entry, async_add_entities):
+    coordinator = hass.data[DOMAIN]["coordinator"]
+    async_add_entities([MacTrackerEntity(coordinator, device) for device in coordinator.devices])
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([MacPresenceEntity(coordinator)])
-
-
-class MacPresenceEntity(TrackerEntity):
-    def __init__(self, coordinator):
+class MacTrackerEntity(TrackerEntity):
+    def __init__(self, coordinator, device):
         self.coordinator = coordinator
-        self._attr_unique_id = f"mac_presence_{coordinator.mac}"
+        self.device = device
+        self._attr_unique_id = device.get("unique_id") or device["mac"]
+        self._attr_name = device["name"]
+        self._mac = device["mac"]
 
-        self._person = coordinator.entry.data.get(CONF_PERSON)
-        self._name = coordinator.entry.data.get(CONF_NAME)
-        self._mac = coordinator.mac
-
-        self._attr_name = self._name
-
-    @property
-    def is_connected(self) -> bool:
-        return self.coordinator.data
+        self.coordinator.async_add_listener(self._handle_coordinator_update)
 
     @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._attr_unique_id)},
-            name=self._name,
-            model="MAC Presence Tracker",
-            manufacturer="Custom",
-            entry_type=DeviceEntryType.SERVICE,
-        )
+    def is_connected(self):
+        return self.coordinator.data.get(self._mac.lower(), False)
 
-    @callback
+    @property
+    def extra_state_attributes(self):
+        return {"ip": self.device.get("last_ip")}
+
     def _handle_coordinator_update(self):
         self.async_write_ha_state()
+
+    async def async_update(self):
+        """Force update from coordinator."""
+        await self.coordinator.async_request_refresh()

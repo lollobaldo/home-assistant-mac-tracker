@@ -1,12 +1,11 @@
 {
   "domain": "mac_tracker",
-  "name": "MAC Presence Tracker",
+  "name": "MAC Tracker",
   "version": "1.0.0",
   "documentation": "https://github.com/lollobaldo/home-assistant-mac-tracker",
   "config_flow": true,
   "iot_class": "local_polling",
-  "requirements": ["scapy"],
-  "dependencies": [],
+  "requirements": ["arp-scan"],
   "codeowners": [
     "@lollobaldo"
   ]
