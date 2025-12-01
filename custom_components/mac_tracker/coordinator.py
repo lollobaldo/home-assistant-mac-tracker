@@ -1,21 +1,35 @@
 import logging
-from homeassistant.components.device_tracker.config_entry import TrackerEntity
+from datetime import timedelta
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.core import HomeAssistant
+from .scanner import scan_network, is_mac_online
+from .const import DEFAULT_SCAN_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
-class MacTrackerEntity(TrackerEntity):
-    def __init__(self, coordinator, device):
-        self.coordinator = coordinator
-        self.device = device
-        self._attr_unique_id = device.get("unique_id") or device["mac"]
-        self._attr_name = device["name"]
-        self._mac = device["mac"]
+class MacTrackerCoordinator(DataUpdateCoordinator):
+    """Coordinator that scans network and updates all devices."""
 
-    async def async_added_to_hass(self):
-        """Called when entity is added to HA."""
-        self.coordinator.async_add_listener(self._handle_coordinator_update)
-        # optionally force an immediate refresh of state
-        self._handle_coordinator_update()
+    def __init__(self, hass: HomeAssistant, devices: list[dict]):
+        super().__init__(
+            hass,
+            _LOGGER,
+            name="MAC Tracker Coordinator",
+            update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
+        )
+        self.devices = devices
+        self.scan_results = {}
 
-    def _handle_coordinator_update(self):
-        self.async_write_ha_state()
+    async def _async_update_data(self):
+        results = await self.hass.async_add_executor_job(scan_network)
+        self.scan_results = {mac: ip for mac, ip in results}
+
+        online_status = {}
+        for device in self.devices:
+            mac = device["mac"].lower()
+            online, ip = is_mac_online(mac, results)
+            device["last_ip"] = ip
+            online_status[mac] = online
+            _LOGGER.debug("Device %s online: %s, IP: %s", device["name"], online, ip)
+
+        return online_status

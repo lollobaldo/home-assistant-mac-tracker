@@ -13,7 +13,14 @@ class MacTrackerEntity(TrackerEntity):
         self._attr_name = device["name"]
         self._mac = device["mac"]
 
+    async def async_added_to_hass(self):
         self.coordinator.async_add_listener(self._handle_coordinator_update)
+        self._handle_coordinator_update()
+
+    def _handle_coordinator_update(self):
+        if self.hass is None:
+            return
+        self.async_write_ha_state()
 
     @property
     def is_connected(self):
@@ -21,10 +28,3 @@ class MacTrackerEntity(TrackerEntity):
 
     def extra_state_attributes(self):
         return {"ip": self.device.get("last_ip")}
-
-    def _handle_coordinator_update(self):
-        self.async_write_ha_state()
-
-    async def async_update(self):
-        """Force update from coordinator."""
-        await self.coordinator.async_request_refresh()
